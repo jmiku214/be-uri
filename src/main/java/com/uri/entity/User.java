@@ -34,6 +34,13 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role roles;
 
+    @OneToOne(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id")
+    private CompanyMaster companyMaster;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
     // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -48,5 +55,10 @@ public class User implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
     @Override
     public boolean isEnabled() { return true; }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
 }
 

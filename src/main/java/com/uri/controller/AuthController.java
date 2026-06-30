@@ -1,6 +1,7 @@
 package com.uri.controller;
 
 
+import com.uri.dto.CompanyRegistrationDto;
 import com.uri.dto.LoginRequest;
 import com.uri.dto.RegisterRequest;
 import com.uri.dto.Response;
@@ -29,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/register/company")
-    public ResponseEntity<?> registerCompany(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> registerCompany(@RequestBody CompanyRegistrationDto request) {
         Response<?> response = loginService.registerCompany(request);
         return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
     }

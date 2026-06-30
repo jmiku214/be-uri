@@ -1,5 +1,6 @@
 package com.uri.dto;
 
+import com.uri.entity.CompanyMaster;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -15,14 +16,18 @@ public class JwtResponse {
     private String role;
     private String email;
     private String phone;
+    private String logoUrl;
+    private CompanyMaster companyData;
 
-    public JwtResponse(Long id, String token, String username, String role, String email, String phone) {
+    public JwtResponse(Long id, String token, String username, String role, String email, String phone,String logoUrl,CompanyMaster companyData) {
         this.id = id;
         this.token = token;
         this.username = username;
         this.role = role;
         this.email = email;
         this.phone = phone;
+        this.logoUrl = logoUrl;
+        this.companyData = companyData;
     }
 }
 

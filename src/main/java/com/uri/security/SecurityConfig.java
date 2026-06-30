@@ -34,13 +34,29 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Public endpoints - must come FIRST
+                        .requestMatchers("/api/auth/**",
+                                "/h2-console/**",
+                                "/file/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**").permitAll()
+
+                        // All other /api/** endpoints require authentication
+                        .requestMatchers("/api/**").authenticated()
+
+                        // Optional: Deny all other requests
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
                 .authenticationProvider(authenticationProvider())
+
+                // Important: JWT Filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
