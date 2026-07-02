@@ -36,7 +36,7 @@ public class LoginServiceImpl implements LoginService {
         }
 
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setName(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRoles(Role.ROLE_TALENT);
@@ -58,7 +58,7 @@ public class LoginServiceImpl implements LoginService {
         CompanyMaster companyMaster = convertToCompanyDto(request);
         CompanyMaster savedCompany = companyMasterRepository.save(companyMaster);
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setName(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRoles(Role.ROLE_COMPANY);
@@ -97,11 +97,15 @@ public class LoginServiceImpl implements LoginService {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
             String jwt = jwtTokenProvider.generateToken(userDetails);
-
-            JwtResponse response = new JwtResponse(
-                    user.getId(), jwt, user.getUsername(),
-                    user.getRoles().name(), user.getEmail(), user.getPhone(), user.getLogoUrl(), user.getCompanyMaster()
-            );
+            JwtResponse response=JwtResponse.builder()
+                    .id(user.getId())
+                    .token(jwt)
+                    .userName(user.getName())
+                    .role(user.getRoles().name())
+                    .email(user.getEmail())
+                    .phone(user.getPhone())
+                    .logoUrl(user.getLogoUrl())
+                    .companyData(user.getCompanyMaster()).build();
 
             return new Response<>(HttpStatus.OK.value(), "Login successfully", response);
         } catch (Exception e) {

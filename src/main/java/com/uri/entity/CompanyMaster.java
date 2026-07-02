@@ -12,6 +12,7 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class CompanyMaster {
 
     @Id

@@ -31,88 +31,88 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 public class FileController {
 
-	@Autowired
-	private FileService fileSystemStorage;
+    @Autowired
+    private FileService fileSystemStorage;
 
-	@Value("${file.upload-dir}")
-	private String filePath;
-	
-	@Value("${application.name}")
-	private String applicationName;
+    @Value("${file.upload-dir}")
+    private String filePath;
 
-	private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+    @Value("${application.name}")
+    private String applicationName;
 
-	@PostMapping("/file/upload")
-	public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
-		try {
-			// Extract original file name and extension
-			String originalFileName = file.getOriginalFilename();
-			if (originalFileName == null || originalFileName.isEmpty()) {
-				return ResponseEntity.badRequest().body("Invalid file name");
-			}
+    private static final Logger logger = LoggerFactory.getLogger(FileController.class);
 
-			int dotIndex = originalFileName.lastIndexOf(".");
-			String fileBaseName = dotIndex != -1 ? originalFileName.substring(0, dotIndex) : originalFileName;
-			String fileExtension = dotIndex != -1 ? originalFileName.substring(dotIndex) : "";
+    @PostMapping("/file/upload")
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
+        try {
+            // Extract original file name and extension
+            String originalFileName = file.getOriginalFilename();
+            if (originalFileName == null || originalFileName.isEmpty()) {
+                return ResponseEntity.badRequest().body("Invalid file name");
+            }
 
-			if (!fileExtension.equals(".png") && !fileExtension.equals(".jpeg") && !fileExtension.equals(".jpg")) {
-				return ResponseEntity.badRequest().body("Invalid file format. Only PNG, JPEG, and JPG are allowed.");
-			}
+            int dotIndex = originalFileName.lastIndexOf(".");
+            String fileBaseName = dotIndex != -1 ? originalFileName.substring(0, dotIndex) : originalFileName;
+            String fileExtension = dotIndex != -1 ? originalFileName.substring(dotIndex) : "";
 
-			// Normalize and construct the new file name
-			String fileName = StringUtils.cleanPath(fileBaseName + "_" + System.currentTimeMillis() + fileExtension);
+            if (!fileExtension.equals(".png") && !fileExtension.equals(".jpeg") && !fileExtension.equals(".jpg") && !fileExtension.equals(".pdf") && !fileExtension.equals(".docx")) {
+                return ResponseEntity.badRequest().body("Invalid file format. Only PNG, JPEG, and JPG are allowed.");
+            }
 
-			// Define the upload directory
-			String uploadDir = filePath; // Replace with your actual directory path
+            // Normalize and construct the new file name
+            String fileName = StringUtils.cleanPath(fileBaseName + "_" + System.currentTimeMillis() + fileExtension);
 
-			// Construct the full file path
-			Path filePath = Paths.get(uploadDir, fileName).normalize();
+            // Define the upload directory
+            String uploadDir = filePath; // Replace with your actual directory path
 
-			// Create parent directories if they don't exist
-			Files.createDirectories(filePath.getParent());
+            // Construct the full file path
+            Path filePath = Paths.get(uploadDir, fileName).normalize();
 
-			// Save the file
-			file.transferTo(filePath.toFile());
+            // Create parent directories if they don't exist
+            Files.createDirectories(filePath.getParent());
 
-			// Generate the download URL
-			String downloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/file/download/").path(fileName)
-					.toUriString();
-			if (downloadUrl.contains("/" + applicationName + "/")) {
+            // Save the file
+            file.transferTo(filePath.toFile());
 
-				downloadUrl = downloadUrl.replace("/" + applicationName + "/", "/backend/");
-				downloadUrl = downloadUrl.replace("http", "https");
-			}
-			// Create the response
-			Response<?> response = new Response<>(HttpStatus.OK.value(), "Upload successfully.", downloadUrl);
-			return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
+            // Generate the download URL
+            String downloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/file/download/").path(fileName)
+                    .toUriString();
+            if (downloadUrl.contains("/" + applicationName + "/")) {
 
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Could not upload file: " + ex.getMessage());
-		}
-	}
+                downloadUrl = downloadUrl.replace("/" + applicationName + "/", "/backend/");
+                downloadUrl = downloadUrl.replace("http", "https");
+            }
+            // Create the response
+            Response<?> response = new Response<>(HttpStatus.OK.value(), "Upload successfully.", downloadUrl);
+            return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
 
-	@GetMapping("/file/download/{fileName}")
-	public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
-		// Load file as Resource
-		Resource resource = fileSystemStorage.loadFileAsResource(fileName, request);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Could not upload file: " + ex.getMessage());
+        }
+    }
 
-		// Try to determine file's content type
-		String contentType = null;
-		try {
-			contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-		} catch (IOException ex) {
-			logger.info("Could not determine file type.");
-		}
+    @GetMapping("/file/download/{fileName}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
+        // Load file as Resource
+        Resource resource = fileSystemStorage.loadFileAsResource(fileName, request);
 
-		// Fallback to the default content type if type could not be determined
-		if (contentType == null) {
-			contentType = "application/octet-stream";
-		}
+        // Try to determine file's content type
+        String contentType = null;
+        try {
+            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+        } catch (IOException ex) {
+            logger.info("Could not determine file type.");
+        }
 
-		return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-				.body(resource);
-	}
+        // Fallback to the default content type if type could not be determined
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+        }
+
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
 }
