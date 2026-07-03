@@ -2,8 +2,11 @@ package com.uri.enums;
 
 public enum RequirementStatus {
     InProgress,
-    Open,
+    Created,
     Cancelled,
     Filled,
-    Awaiting_Review
+    Awaiting_Review,
+    Assigned,
+    Approved,
+    Rejected
 }

@@ -69,6 +69,6 @@ public class RequirementDetails {
     private Date createdAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "requirement_status")
     private RequirementStatus status;
 }

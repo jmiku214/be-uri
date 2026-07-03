@@ -1,5 +1,6 @@
 package com.uri.serviceImpl;
 
+import com.uri.dto.AdminRequirementsDto;
 import com.uri.dto.JobRequirementDTO;
 import com.uri.dto.Response;
 import com.uri.entity.CompanyMaster;
@@ -45,7 +46,7 @@ public class RequirementServiceImpl implements RequirementService {
                 .attachments((jobRequirementDTO.getAttachments()==null || jobRequirementDTO.getAttachments().isEmpty())?"":String.join(", ", jobRequirementDTO.getAttachments()))
                 .internalNotes(jobRequirementDTO.getInternalNotes())
                 .companyMaster(CompanyMaster.builder().id(jobRequirementDTO.getCompanyId()).build())
-                .status(RequirementStatus.Awaiting_Review)
+                .status(RequirementStatus.Created)
                 .createdAt(new Date())
                 .build();
         requirementDetailsRepository.save(requirementDetails);
@@ -77,6 +78,30 @@ public class RequirementServiceImpl implements RequirementService {
         return new Response<>(HttpStatus.OK.value(), "Recent requirement found", convertToDTO(recentRequirement));
     }
 
+    @Override
+    public Response<?> getAllRequirementsForAdmin() {
+        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAll();
+        AdminRequirementsDto adminRequirementsDto = new AdminRequirementsDto();
+        adminRequirementsDto.setNewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Created).map(this::convertToDTO).toList());
+        adminRequirementsDto.setAssignedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Assigned).map(this::convertToDTO).toList());
+        adminRequirementsDto.setInProgressRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.InProgress).map(this::convertToDTO).toList());
+        adminRequirementsDto.setAwaitingReviewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Awaiting_Review).map(this::convertToDTO).toList());
+        adminRequirementsDto.setClosedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Filled).map(this::convertToDTO).toList());
+        return new Response<>(HttpStatus.OK.value(), "All requirements found", adminRequirementsDto);
+    }
+
+    @Override
+    public Response<?> getAllRequirementsForCompanyDashboard(String companyId) {
+        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAllByCompanyId(companyId);
+        AdminRequirementsDto adminRequirementsDto = new AdminRequirementsDto();
+        adminRequirementsDto.setNewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Created).map(this::convertToDTO).toList());
+        adminRequirementsDto.setAssignedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Assigned).map(this::convertToDTO).toList());
+        adminRequirementsDto.setInProgressRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.InProgress).map(this::convertToDTO).toList());
+        adminRequirementsDto.setAwaitingReviewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Awaiting_Review).map(this::convertToDTO).toList());
+        adminRequirementsDto.setClosedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Filled).map(this::convertToDTO).toList());
+        return new Response<>(HttpStatus.OK.value(), "All requirements found", adminRequirementsDto);
+    }
+
     private JobRequirementDTO convertToDTO(RequirementDetails requirementDetails) {
         return JobRequirementDTO.builder()
                 .roleTitle(requirementDetails.getRoleTitle())
@@ -100,6 +125,7 @@ public class RequirementServiceImpl implements RequirementService {
                 .status(requirementDetails.getStatus())
                 .createdAt(requirementDetails.getCreatedAt())
                 .id(requirementDetails.getId())
+                .companyName(requirementDetails.getCompanyMaster().getCompanyName())
                 .build();
     }
 }

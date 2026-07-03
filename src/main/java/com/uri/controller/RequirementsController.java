@@ -27,6 +27,11 @@ public class RequirementsController {
         return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
     }
 
+    @GetMapping("get-all/for/company-dashboard")
+    public ResponseEntity<?> getAllRequirementsForCompanyDashboard(@RequestParam(required = true) String companyId){
+        Response<?> response=requirementService.getAllRequirementsForCompanyDashboard(companyId);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
+    }
     @GetMapping("view")
     public ResponseEntity<?> getRequirement(@RequestParam(required = true) Long id){
         Response<?> response=requirementService.getRequirement(id);
@@ -36,6 +41,12 @@ public class RequirementsController {
     @GetMapping("view/recent-post")
     public ResponseEntity<?> getRecentPost(@RequestParam(required = true) Long companyId){
         Response<?> response=requirementService.getRecentPost(companyId);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
+    }
+
+    @GetMapping("get-all/by/admin")
+    public ResponseEntity<?> getAllRequirementsByAdmin(){
+        Response<?> response=requirementService.getAllRequirementsForAdmin();
         return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));
     }
 }

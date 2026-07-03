@@ -114,5 +114,21 @@ public class LoginServiceImpl implements LoginService {
         }
     }
 
+    @Override
+    public Response<?> registerAdmin(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return new Response<>(HttpStatus.BAD_REQUEST.value(), "Admin already exists", null);
+        }
+        User user = new User();
+        user.setName(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(Role.ROLE_ADMIN);
+        user.setPhone(request.getPhone());
+        user.setLogoUrl(request.getLogoUrl());
+        userRepository.save(user);
+        return new Response<>(HttpStatus.OK.value(), "Admin registered successfully", null);
+    }
+
 
 }

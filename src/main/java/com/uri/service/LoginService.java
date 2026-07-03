@@ -11,4 +11,6 @@ public interface LoginService {
     Response<?> registerCompany(CompanyRegistrationDto request);
 
     Response<?> login(LoginRequest request);
+
+    Response<?> registerAdmin(RegisterRequest request);
 }

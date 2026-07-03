@@ -11,4 +11,8 @@ public interface RequirementService {
     Response<?> getRequirement(Long id);
 
     Response<?> getRecentPost(Long companyId);
+
+    Response<?> getAllRequirementsForAdmin();
+
+    Response<?> getAllRequirementsForCompanyDashboard(String companyId);
 }

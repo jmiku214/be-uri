@@ -45,4 +45,5 @@ public class JobRequirementDTO {
     private RequirementStatus status;
     private Date createdAt;
     private Long id;
+    private String companyName;
 }
