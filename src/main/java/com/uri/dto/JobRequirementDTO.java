@@ -46,4 +46,6 @@ public class JobRequirementDTO {
     private Date createdAt;
     private Long id;
     private String companyName;
+    private Long recruiterId;
+    private String recruiterName;
 }

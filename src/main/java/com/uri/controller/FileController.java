@@ -77,12 +77,12 @@ public class FileController {
             // Generate the download URL
             String downloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/file/download/").path(fileName)
                     .toUriString();
-            downloadUrl = downloadUrl.replace("http", "https");
-//            if (downloadUrl.contains("/" + applicationName + "/")) {
-//
-//                downloadUrl = downloadUrl.replace("/" + applicationName + "/", "/backend/");
-//                downloadUrl = downloadUrl.replace("http", "https");
-//            }
+//            downloadUrl = downloadUrl.replace("http", "https");
+            if (downloadUrl.contains("/" + applicationName + "/")) {
+
+                downloadUrl = downloadUrl.replace("/" + applicationName + "/", "/backend/");
+                downloadUrl = downloadUrl.replace("http", "https");
+            }
             // Create the response
             Response<?> response = new Response<>(HttpStatus.OK.value(), "Upload successfully.", downloadUrl);
             return new ResponseEntity<>(response, HttpStatus.valueOf(response.getResponseCode()));

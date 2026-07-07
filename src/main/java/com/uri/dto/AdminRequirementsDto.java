@@ -16,6 +16,7 @@ public class AdminRequirementsDto {
     private List<JobRequirementDTO> inProgressRequirements;
     private List<JobRequirementDTO> awaitingReviewRequirements;
     private List<JobRequirementDTO> closedRequirements;
+    private List<JobRequirementDTO> openRequirements;
 
 
 }

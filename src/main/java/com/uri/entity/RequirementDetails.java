@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Date;
-import java.util.List;
 
 @Entity
 @Table(name = "requirement_details")
@@ -71,4 +70,11 @@ public class RequirementDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "requirement_status")
     private RequirementStatus status;
+
+    @OneToOne(cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "hiring_manager")
+    private User hiringManager;
+
+    @Column(name = "hiring_manager_assigned_at")
+    private Date hiringManagerAssignedAt;
 }

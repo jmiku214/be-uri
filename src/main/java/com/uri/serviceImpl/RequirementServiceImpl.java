@@ -3,19 +3,18 @@ package com.uri.serviceImpl;
 import com.uri.dto.AdminRequirementsDto;
 import com.uri.dto.JobRequirementDTO;
 import com.uri.dto.Response;
-import com.uri.entity.CompanyMaster;
-import com.uri.entity.HiringDepartments;
-import com.uri.entity.JobLocation;
-import com.uri.entity.RequirementDetails;
+import com.uri.entity.*;
 import com.uri.enums.RequirementStatus;
+import com.uri.enums.Role;
 import com.uri.repository.RequirementDetailsRepository;
 import com.uri.service.RequirementService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class RequirementServiceImpl implements RequirementService {
@@ -54,9 +53,16 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
-    public Response<?> getAllRequirements(String companyId) {
-        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAllByCompanyId(companyId);
-        List<JobRequirementDTO> jobRequirementDTOList = requirementDetailsList.stream().filter(Objects::nonNull).map(this::convertToDTO).toList();
+    public Response<?> getAllRequirements(String companyId, Authentication auth) {
+        boolean isAdminOrSuperAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> Role.ROLE_ADMIN.name().equals(a.getAuthority()) || Role.ROLE_SUPERADMIN.name().equals(a.getAuthority()));
+        if(!isAdminOrSuperAdmin) {
+            List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAllByCompanyId(companyId);
+            List<JobRequirementDTO> jobRequirementDTOList = requirementDetailsList.stream().filter(Objects::nonNull).map(this::convertToDTO).toList();
+            return new Response<>(HttpStatus.OK.value(),  "All requirements found", jobRequirementDTOList);
+        }
+        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAll();
+        List<JobRequirementDTO> jobRequirementDTOList = requirementDetailsList.stream().map(this::convertToDTO).toList();
         return new Response<>(HttpStatus.OK.value(),  "All requirements found", jobRequirementDTOList);
     }
 
@@ -79,7 +85,7 @@ public class RequirementServiceImpl implements RequirementService {
     }
 
     @Override
-    public Response<?> getAllRequirementsForAdmin() {
+    public Response<?> getAllRequirementsByAdminForDashboard() {
         List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAll();
         AdminRequirementsDto adminRequirementsDto = new AdminRequirementsDto();
         adminRequirementsDto.setNewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Created).map(this::convertToDTO).toList());
@@ -87,6 +93,24 @@ public class RequirementServiceImpl implements RequirementService {
         adminRequirementsDto.setInProgressRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.InProgress).map(this::convertToDTO).toList());
         adminRequirementsDto.setAwaitingReviewRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Awaiting_Review).map(this::convertToDTO).toList());
         adminRequirementsDto.setClosedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Filled).map(this::convertToDTO).toList());
+        return new Response<>(HttpStatus.OK.value(), "All requirements found", adminRequirementsDto);
+    }
+
+    @Override
+    public Response<?> getAllRequirementsForAdmin() {
+        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAll();
+        List<JobRequirementDTO> jobRequirementDTOList = requirementDetailsList.stream().filter(Objects::nonNull).map(this::convertToDTO).toList();
+        return new Response<>(HttpStatus.OK.value(), "All requirements found", jobRequirementDTOList);
+    }
+
+    @Override
+    public Response<?> getAllRequirementsForCompanyDashboardCount(String companyId) {
+        List<RequirementDetails> requirementDetailsList = requirementDetailsRepository.findAllByCompanyId(companyId);
+        AdminRequirementsDto adminRequirementsDto = new AdminRequirementsDto();
+        adminRequirementsDto.setOpenRequirements(requirementDetailsList.stream().filter(r->r.getStatus()==RequirementStatus.Created ||  r.getStatus()==RequirementStatus.Assigned || r.getStatus()==RequirementStatus.InProgress).map(this::convertToDTO).toList());
+        adminRequirementsDto.setInProgressRequirements(requirementDetailsList.stream().filter(r->r.getStatus()==RequirementStatus.InProgress).map(this::convertToDTO).toList());
+        adminRequirementsDto.setAwaitingReviewRequirements(requirementDetailsList.stream().filter(r->r.getStatus()==RequirementStatus.Awaiting_Review).map(this::convertToDTO).toList());
+        adminRequirementsDto.setClosedRequirements(requirementDetailsList.stream().filter(r->r.getStatus()==RequirementStatus.Filled).map(this::convertToDTO).toList());
         return new Response<>(HttpStatus.OK.value(), "All requirements found", adminRequirementsDto);
     }
 
@@ -101,6 +125,35 @@ public class RequirementServiceImpl implements RequirementService {
         adminRequirementsDto.setClosedRequirements(requirementDetailsList.stream().filter(r -> r.getStatus() == RequirementStatus.Filled).map(this::convertToDTO).toList());
         return new Response<>(HttpStatus.OK.value(), "All requirements found", adminRequirementsDto);
     }
+
+
+
+    @Override
+    public Response<?> rejectRequirement(JobRequirementDTO jobRequirementDTO) {
+        Optional<RequirementDetails> details=requirementDetailsRepository.findById(jobRequirementDTO.getId());
+        if(details.isEmpty()){
+            return new Response<>(HttpStatus.NOT_FOUND.value(), "Requirement not found", null);
+        }
+        details.get().setStatus(RequirementStatus.Rejected);
+        requirementDetailsRepository.save(details.get());
+        return new Response<>(HttpStatus.OK.value(), "Requirement rejected successfully", null);
+    }
+
+    @Override
+    public Response<?> associateHiringManager(JobRequirementDTO jobRequirementDTO) {
+        RequirementDetails requirementDetails = requirementDetailsRepository.findById(jobRequirementDTO.getId()).orElse(null);
+        if (requirementDetails == null) {
+            return new Response<>(HttpStatus.NOT_FOUND.value(), "Requirement not found", null);
+        }
+        requirementDetails.setStatus(RequirementStatus.Assigned);
+        requirementDetails.setHiringManager(User.builder()
+                .id(jobRequirementDTO.getRecruiterId()).build());
+        requirementDetails.setHiringManagerAssignedAt(new Date());
+        requirementDetailsRepository.save(requirementDetails);
+        return new Response<>(HttpStatus.OK.value(), "Hiring manager associated successfully", null);
+    }
+
+
 
     private JobRequirementDTO convertToDTO(RequirementDetails requirementDetails) {
         return JobRequirementDTO.builder()
@@ -126,6 +179,8 @@ public class RequirementServiceImpl implements RequirementService {
                 .createdAt(requirementDetails.getCreatedAt())
                 .id(requirementDetails.getId())
                 .companyName(requirementDetails.getCompanyMaster().getCompanyName())
+                .recruiterName(requirementDetails.getHiringManager()!=null?requirementDetails.getHiringManager().getName():null)
+                .recruiterId(requirementDetails.getHiringManager()!=null?requirementDetails.getHiringManager().getId():null)
                 .build();
     }
 }
